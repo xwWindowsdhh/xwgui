@@ -6,10 +6,8 @@
 
 #### 前提条件
 
-- **Python 3.6+**
-- **Windows**: Windows 7 SP1 及以上
-- **Linux**: Ubuntu 16.04+ / Debian 9+ / Fedora 26+ 或任何能安装 Python 3.6 的发行版
-- **macOS**: 10.9 Mavericks 及以上
+- **Python 3.0+**
+- **Windows**: Windows 2000 及以上（目前仅支持 Windows）
 
 ## 使用方法
 
@@ -49,14 +47,15 @@ cd xwgui
 ```
 .github/ GitHub 相关配置
     AUTHORS.md 项目作者列表文件
-    CHANGELOG.md 项目更新日志文件
     CODE_OF_CONDUCT.md 参与者公约文件
     CONTRIBUTING.md 贡献指南文件
     PULL_REQUEST_TEMPLATE.md 提交 PR 提示文件
     TODO.md 项目代办文件
 docs/ 函数使用介绍文档
+    window.md window 函数使用说明文档
 src/ 项目源代码
-    main.py 主程序代码文件
+    __init__.py 包初始化文件，统一导出接口
+    window.py 窗口创建模块
 .gitignore git 忽略配置文件
 LICENSE 项目许可证文件
 README.md 项目介绍文件
