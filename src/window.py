@@ -1,6 +1,7 @@
 import ctypes
 from ctypes import wintypes
 import characters
+import button
 
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32
@@ -52,6 +53,7 @@ def _window_proc(hwnd, msg, wparam, lparam):
             gdi32.SetBkMode(hdc, 1)
             
             characters._redraw_all(hdc)
+            button._redraw_all_buttons(hdc)
             
             user32.EndPaint(hwnd, ctypes.byref(ps))
             return 0
@@ -130,6 +132,7 @@ def window(title, width, height, x=None, y=None):
     gdi32.SetBkMode(hdc, 1)
     
     characters._redraw_all(hdc)
+    button._redraw_all_buttons(hdc)
     
     user32.ReleaseDC(hwnd, hdc)
     
