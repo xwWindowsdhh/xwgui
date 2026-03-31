@@ -12,9 +12,8 @@ _pressed_button = None
 
 
 def _redraw_all_buttons(hdc):
-    """绘制所有按钮"""
     for i, btn in enumerate(_all_buttons):
-        text, x, y, bg_color, text_color = btn
+        text, x, y, bg_color, text_color, func, args = btn
         is_pressed = (_pressed_button == i)
 
         if is_pressed:
@@ -77,6 +76,14 @@ def _set_pressed(x, y, pressed):
                 return
     else:
         if _pressed_button is not None:
+            btn = _all_buttons[_pressed_button]
+            func = btn[5]
+            args = btn[6]
+            if func:
+                if args:
+                    func(*args)
+                else:
+                    func()
             _pressed_button = None
             user32.InvalidateRect(user32.GetForegroundWindow(), None, 0)
 
@@ -89,5 +96,15 @@ def _is_over_button(x, y):
     return False
 
 
-def button(text, x, y, bg_color=0x00C0C0C0, text_color=0x00000000):
-    _all_buttons.append((text, x, y, bg_color, text_color))
+def button(text, x, y, *args, bg_color=0x00C0C0C0, text_color=0x00000000):
+    if len(args) == 0:
+        func = None
+        func_args = None
+    elif len(args) == 1 and callable(args[0]):
+        func = args[0]
+        func_args = None
+    else:
+        func = args[0]
+        func_args = args[1:]
+    
+    _all_buttons.append((text, x, y, bg_color, text_color, func, func_args))
