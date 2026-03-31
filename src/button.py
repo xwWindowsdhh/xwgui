@@ -9,42 +9,59 @@ BUTTON_WIDTH = 80
 BUTTON_HEIGHT = 25
 
 _all_buttons = []
+_pressed_button = None  # 当前被按下的按钮索引
 
 
 def _redraw_all_buttons(hdc):
     """绘制所有按钮"""
-    for text, x, y, bg_color, text_color in _all_buttons:
-        # 绘制按钮背景（3D效果）
-        # 外边框 - 黑色
-        _draw_rect(hdc, x, y, x + BUTTON_WIDTH, y + BUTTON_HEIGHT, 0x00000000)
-        
-        # 按钮背景 - 浅灰色
-        _fill_rect(hdc, x + 1, y + 1, x + BUTTON_WIDTH - 1, y + BUTTON_HEIGHT - 1, 0x00C0C0C0)
-        
-        # 绘制文字（居中）
+    for i, btn in enumerate(_all_buttons):
+        text, x, y, bg_color, text_color = btn
+        is_pressed = (_pressed_button == i)
+
+        if is_pressed:
+            # 按下状态：内凹效果
+            # 右边和下边 - 白色（阴影）
+            _draw_line(hdc, x + BUTTON_WIDTH - 1, y + 1, x + BUTTON_WIDTH - 1, y + BUTTON_HEIGHT - 1, 0x00FFFFFF)
+            _draw_line(hdc, x + 1, y + BUTTON_HEIGHT - 1, x + BUTTON_WIDTH - 1, y + BUTTON_HEIGHT - 1, 0x00FFFFFF)
+            # 左边和上边 - 深灰（阴影）
+            _draw_line(hdc, x, y, x, y + BUTTON_HEIGHT - 1, 0x00808080)
+            _draw_line(hdc, x, y, x + BUTTON_WIDTH - 1, y, 0x00808080)
+        else:
+            # 正常状态：外凸效果
+            # 左边和上边 - 白色（高光）
+            _draw_line(hdc, x, y, x, y + BUTTON_HEIGHT - 1, 0x00FFFFFF)
+            _draw_line(hdc, x, y, x + BUTTON_WIDTH - 1, y, 0x00FFFFFF)
+            # 右边和下边 - 深灰（阴影）
+            _draw_line(hdc, x + BUTTON_WIDTH - 1, y, x + BUTTON_WIDTH - 1, y + BUTTON_HEIGHT - 1, 0x00808080)
+            _draw_line(hdc, x, y + BUTTON_HEIGHT - 1, x + BUTTON_WIDTH - 1, y + BUTTON_HEIGHT - 1, 0x00808080)
+
+        # 按钮背景
+        _fill_rect(hdc, x + 1, y + 1, x + BUTTON_WIDTH - 1, y + BUTTON_HEIGHT - 1, bg_color)
+
+        # 绘制文字（居中，按下时稍微偏移）
         gdi32.SetTextColor(hdc, text_color)
         gdi32.SetBkMode(hdc, 1)
-        
-        # 计算文字居中位置
-        text_width = len(text) * 8  # 粗略估算
+
+        text_width = len(text) * 8
         text_x = x + (BUTTON_WIDTH - text_width) // 2
         text_y = y + (BUTTON_HEIGHT - 16) // 2
-        
+
+        if is_pressed:
+            text_x += 1
+            text_y += 1
+
         text_wide = ctypes.c_wchar_p(text)
         gdi32.TextOutW(hdc, text_x, text_y, text_wide, len(text))
 
 
-def _draw_rect(hdc, left, top, right, bottom, color):
-    """绘制矩形边框"""
-    pen = gdi32.CreatePen(0, 1, color)  # PS_SOLID = 0
+def _draw_line(hdc, x1, y1, x2, y2, color):
+    """绘制直线"""
+    pen = gdi32.CreatePen(0, 1, color)
     old_pen = gdi32.SelectObject(hdc, pen)
-    
-    gdi32.MoveToEx(hdc, left, top, None)
-    gdi32.LineTo(hdc, right, top)
-    gdi32.LineTo(hdc, right, bottom)
-    gdi32.LineTo(hdc, left, bottom)
-    gdi32.LineTo(hdc, left, top)
-    
+
+    gdi32.MoveToEx(hdc, x1, y1, None)
+    gdi32.LineTo(hdc, x2, y2)
+
     gdi32.SelectObject(hdc, old_pen)
     gdi32.DeleteObject(pen)
 
@@ -52,17 +69,46 @@ def _draw_rect(hdc, left, top, right, bottom, color):
 def _fill_rect(hdc, left, top, right, bottom, color):
     """填充矩形"""
     brush = gdi32.CreateSolidBrush(color)
-    
+
     rect = wintypes.RECT(left, top, right, bottom)
     user32.FillRect(hdc, ctypes.byref(rect), brush)
-    
+
     gdi32.DeleteObject(brush)
+
+
+def _set_pressed(x, y, pressed):
+    """设置按钮按下状态"""
+    global _pressed_button
+
+    if pressed:
+        # 检查哪个按钮被按下
+        for i, btn in enumerate(_all_buttons):
+            bx, by = btn[1], btn[2]
+            if bx <= x <= bx + BUTTON_WIDTH and by <= y <= by + BUTTON_HEIGHT:
+                _pressed_button = i
+                # 强制重绘
+                user32.InvalidateRect(user32.GetForegroundWindow(), None, 0)
+                return
+    else:
+        if _pressed_button is not None:
+            _pressed_button = None
+            # 强制重绘
+            user32.InvalidateRect(user32.GetForegroundWindow(), None, 0)
+
+
+def _is_over_button(x, y):
+    """检查鼠标是否在按钮上"""
+    for btn in _all_buttons:
+        bx, by = btn[1], btn[2]
+        if bx <= x <= bx + BUTTON_WIDTH and by <= y <= by + BUTTON_HEIGHT:
+            return True
+    return False
 
 
 def button(text, x, y, bg_color=0x00C0C0C0, text_color=0x00000000):
     """
-    添加按钮
-    
+    添加按钮（有点击效果，无功能）
+
     参数:
         text: 按钮文字
         x: 按钮左上角 x 坐标
