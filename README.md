@@ -53,9 +53,11 @@ cd xwgui
     TODO.md 项目代办文件
 docs/ 函数使用介绍文档
     window.md window 函数使用说明文档
+    characters.md characters 函数使用说明文档
 src/ 项目源代码
     __init__.py 包初始化文件，统一导出接口
     window.py 窗口创建模块
+    characters.py 文字显示模块
 .gitignore git 忽略配置文件
 LICENSE 项目许可证文件
 README.md 项目介绍文件

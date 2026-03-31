@@ -1,8 +1,11 @@
 import ctypes
 from ctypes import wintypes
+import characters
 
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32
+
+gdi32 = ctypes.windll.gdi32
 
 WS_OVERLAPPEDWINDOW = 0x00CF0000
 SW_SHOW = 1
@@ -10,6 +13,7 @@ WM_CLOSE = 0x0010
 WM_DESTROY = 0x0002
 WM_QUIT = 0x0012
 WM_SIZE = 0x0005
+WM_PAINT = 0x000F
 CS_HREDRAW = 0x0002
 CS_VREDRAW = 0x0001
 COLOR_WINDOW = 5
@@ -33,13 +37,28 @@ user32.PostQuitMessage.restype = None
 
 
 def _window_proc(hwnd, msg, wparam, lparam):
-    if msg == WM_CLOSE:
+    try:
+        if msg == WM_CLOSE:
+            user32.DestroyWindow(hwnd)
+            return 0
+        elif msg == WM_DESTROY:
+            user32.PostQuitMessage(0)
+            return 0
+        elif msg == WM_PAINT:
+            ps = PAINTSTRUCT()
+            hdc = user32.BeginPaint(hwnd, ctypes.byref(ps))
+            
+            gdi32.SetTextColor(hdc, 0x00000000)
+            gdi32.SetBkMode(hdc, 1)
+            
+            characters._redraw_all(hdc)
+            
+            user32.EndPaint(hwnd, ctypes.byref(ps))
+            return 0
+        return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
+    except KeyboardInterrupt:
         user32.DestroyWindow(hwnd)
         return 0
-    elif msg == WM_DESTROY:
-        user32.PostQuitMessage(0)
-        return 0
-    return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
 
 
 WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, WPARAM, LPARAM)
@@ -57,6 +76,17 @@ class WNDCLASSW(ctypes.Structure):
         ("hbrBackground", wintypes.HBRUSH),
         ("lpszMenuName", wintypes.LPCWSTR),
         ("lpszClassName", wintypes.LPCWSTR),
+    ]
+
+
+class PAINTSTRUCT(ctypes.Structure):
+    _fields_ = [
+        ("hdc", wintypes.HDC),
+        ("fErase", wintypes.BOOL),
+        ("rcPaint", wintypes.RECT),
+        ("fRestore", wintypes.BOOL),
+        ("fIncUpdate", wintypes.BOOL),
+        ("rgbReserved", ctypes.c_byte * 32),
     ]
 
 
@@ -95,7 +125,18 @@ def window(title, width, height, x=None, y=None):
     
     _current_window = hwnd
     
-    _run_message_loop()
+    hdc = user32.GetDC(hwnd)
+    gdi32.SetTextColor(hdc, 0x00000000)
+    gdi32.SetBkMode(hdc, 1)
+    
+    characters._redraw_all(hdc)
+    
+    user32.ReleaseDC(hwnd, hdc)
+    
+    try:
+        _run_message_loop()
+    except KeyboardInterrupt:
+        user32.DestroyWindow(hwnd)
     
     return hwnd
 
