@@ -101,6 +101,7 @@ def window(title, width, height, x=None, y=None):
     wc.style = CS_HREDRAW | CS_VREDRAW
     wc.lpfnWndProc = WNDPROC(_window_proc)
     wc.hInstance = hInstance
+    wc.hCursor = user32.LoadCursorW(0, 32512)  # IDC_ARROW = 32512
     wc.hbrBackground = ctypes.c_void_p(COLOR_WINDOW + 1)
     wc.lpszClassName = "xwguiWindow"
     
