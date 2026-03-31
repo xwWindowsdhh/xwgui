@@ -19,7 +19,6 @@ WM_LBUTTONDOWN = 0x0201
 WM_LBUTTONUP = 0x0202
 WM_MOUSEMOVE = 0x0200
 
-# 光标常量
 IDC_ARROW = 32512
 IDC_HAND = 32649
 CS_HREDRAW = 0x0002
@@ -65,21 +64,16 @@ def _window_proc(hwnd, msg, wparam, lparam):
             user32.EndPaint(hwnd, ctypes.byref(ps))
             return 0
         elif msg == WM_LBUTTONDOWN:
-            # 获取鼠标坐标
             x = lparam & 0xFFFF
             y = (lparam >> 16) & 0xFFFF
-            # 检查是否点击了按钮，设置按下状态
             button._set_pressed(x, y, True)
             return 0
         elif msg == WM_LBUTTONUP:
-            # 鼠标释放，取消按下状态
             button._set_pressed(0, 0, False)
             return 0
         elif msg == WM_MOUSEMOVE:
-            # 获取鼠标坐标
             x = lparam & 0xFFFF
             y = (lparam >> 16) & 0xFFFF
-            # 检查是否在按钮上，切换光标
             if button._is_over_button(x, y):
                 user32.SetCursor(user32.LoadCursorW(0, IDC_HAND))
             else:
@@ -129,7 +123,7 @@ def window(title, width, height, x=None, y=None):
     wc.style = CS_HREDRAW | CS_VREDRAW
     wc.lpfnWndProc = WNDPROC(_window_proc)
     wc.hInstance = hInstance
-    wc.hCursor = user32.LoadCursorW(0, 32512)  # IDC_ARROW = 32512
+    wc.hCursor = user32.LoadCursorW(0, 32512)
     wc.hbrBackground = ctypes.c_void_p(COLOR_WINDOW + 1)
     wc.lpszClassName = "xwguiWindow"
     
